@@ -6,6 +6,8 @@ return [
         'default' => [
             'api' => [
                 'title' => 'L5 Swagger UI',
+                'accept' => 'application/json',
+                'content_type' => 'application/json',
             ],
 
             'routes' => [

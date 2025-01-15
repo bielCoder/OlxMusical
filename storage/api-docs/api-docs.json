@@ -1,7 +1,7 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "OLX Musical",
+        "title": "BandFy",
         "description": "Sistema de comunicação e venda de serviços musicais",
         "version": "1.0.0"
     },
@@ -30,33 +30,27 @@
                                 "properties": {
                                     "fullname": {
                                         "type": "string",
-                                        "format": "fullname",
                                         "example": "João Pé de Feijão"
                                     },
                                     "main_phone": {
                                         "type": "integer",
-                                        "format": "main_phone",
                                         "example": "61999999999"
                                     },
                                     "optional_phone": {
                                         "type": "integer",
-                                        "format": "optional_phone",
                                         "example": "6177777777"
                                     },
                                     "email": {
                                         "type": "string",
-                                        "format": "email",
                                         "example": "joao@email.com.br"
                                     },
                                     "password": {
                                         "type": "string",
-                                        "format": "password",
                                         "example": "G@bri&L123"
                                     },
                                     "password_confirmed": {
                                         "type": "boolean",
-                                        "format": "password",
-                                        "example": "true"
+                                        "example": true
                                     }
                                 },
                                 "type": "object"
@@ -73,8 +67,93 @@
                     },
                     "409": {
                         "description": "Usuário já cadastrado."
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor."
                     }
                 }
+            }
+        },
+        "/api/users/login": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Logar no sistema",
+                "description": "Usuário pode fazer login e entrar no sistema",
+                "operationId": "b5c0481a14cf25e2840c6c9dd1e4f3d0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "joao@email.com.br"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "******"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login realizado com sucesso."
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas."
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor."
+                    }
+                }
+            }
+        },
+        "/api/users/logout": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Deslogar do sistema",
+                "description": "Nesse endpoint o usuário irá deslogar de sua conta no sistema.",
+                "operationId": "c3a125fe0fc085e4b3567e954639d4a0",
+                "responses": {
+                    "204": {
+                        "description": "Logout realizado com sucesso. Nenhum conteúdo retornado."
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas"
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
             }
         }
     },
