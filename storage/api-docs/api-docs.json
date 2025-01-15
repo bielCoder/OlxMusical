@@ -1,0 +1,87 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "OLX Musical",
+        "description": "Sistema de comunicação e venda de serviços musicais",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/users/register": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Registrar um novo usuário",
+                "description": "Cria um novo usuário na aplicação.",
+                "operationId": "13565b949a19a5836c3fe9f30a37dbc6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "fullname",
+                                    "main_phone",
+                                    "optional_phone",
+                                    "email",
+                                    "password",
+                                    "password_confirmed"
+                                ],
+                                "properties": {
+                                    "fullname": {
+                                        "type": "string",
+                                        "format": "fullname",
+                                        "example": "João Pé de Feijão"
+                                    },
+                                    "main_phone": {
+                                        "type": "integer",
+                                        "format": "main_phone",
+                                        "example": "61999999999"
+                                    },
+                                    "optional_phone": {
+                                        "type": "integer",
+                                        "format": "optional_phone",
+                                        "example": "6177777777"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "joao@email.com.br"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "G@bri&L123"
+                                    },
+                                    "password_confirmed": {
+                                        "type": "boolean",
+                                        "format": "password",
+                                        "example": "true"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuário registrado com sucesso."
+                    },
+                    "422": {
+                        "description": "Senhas não conferem."
+                    },
+                    "409": {
+                        "description": "Usuário já cadastrado."
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Autenticação",
+            "description": "Autenticação"
+        }
+    ]
+}

@@ -93,4 +93,28 @@ class AuthController extends Controller
             return $this -> response -> error("users","application\json","post",$e -> getMessage(), 500);
         }
     }
+
+
+    public function login()
+    {
+        try{
+            $user = User::where('email', $request->email)
+            ->where('register', $request->register)
+            ->first();
+            if(!is_null($user) && Hash::check($request -> password, $user -> password))
+            {
+                return $this -> response -> format("users","application\json","post",$user,$user -> createToken($user -> name) -> plainTextToken,$user -> name.' is logged',202);
+            } else {
+                return $this -> response -> error("users","application\json","post","Credenciais Inválidas.",401);
+            }
+        } catch(\Exception $e)
+        {
+          
+            return $this -> response -> error("users","application\json","post",$e -> getMessage(),500);
+        } catch(\PDOException $e)
+        {
+          
+            return $this -> response -> error("users","application\json","post",$e -> getMessage(),500);
+        }
+    }
 }
