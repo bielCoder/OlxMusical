@@ -16,5 +16,18 @@ Route::prefix('users')->group(function () {
     Route::controller(AuthController::class)->group(function(){
         Route::post('register','register')->name('User - Register');
         Route::post('login','login')->name('User - Login');
+        Route::middleware(['web'])->group(function () {
+            Route::get('auth/google/redirect','redirectOAuth')->name('User - OAuth - Redirect');
+            Route::get('auth/google/callback', 'oAuth')->name('User - OAuth');
+        });
     });
+});
+
+
+Route::prefix('dashboard')->group(function () {
+    Route::get('', function () {
+        return response()->json([
+            "status" => "logged"
+        ]);
+    })->name('api.dashboard'); // Certifique-se de usar o prefixo 'api' aqui
 });

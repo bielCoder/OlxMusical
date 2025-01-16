@@ -146,6 +146,84 @@
                     }
                 ]
             }
+        },
+        "/auth/google/redirect": {
+            "get": {
+                "tags": [
+                    "User - OAuth"
+                ],
+                "summary": "Redirect to Google OAuth",
+                "description": "Redirects the user to Google OAuth for authentication.",
+                "operationId": "redirectOAuth",
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Google OAuth",
+                        "headers": {
+                            "Location": {
+                                "description": "Redirect location",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/google/callback": {
+            "get": {
+                "tags": [
+                    "User - OAuth"
+                ],
+                "summary": "Handle Google OAuth Callback",
+                "description": "Handles the callback from Google after authentication and logs in the user.",
+                "operationId": "oAuth",
+                "responses": {
+                    "302": {
+                        "description": "Redirect to the dashboard after successful login",
+                        "headers": {
+                            "Location": {
+                                "description": "Redirect location",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -161,6 +239,10 @@
         {
             "name": "Autenticação",
             "description": "Autenticação"
+        },
+        {
+            "name": "User - OAuth",
+            "description": "User - OAuth"
         }
     ]
 }

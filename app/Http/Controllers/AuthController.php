@@ -6,8 +6,11 @@ use App\Classes\Utilities\Response;
 use App\Http\Requests\{AuthLoginRequest, AuthRegisterRequest};
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Socialite\Facades\Socialite;
+use PDOException;
 
 /**
  * @OA\Info(
@@ -156,51 +159,140 @@ class AuthController extends Controller
         }
     }
 
-            /**
-             * @OA\Post(
-             *     path="/api/users/logout",
-             *     summary="Deslogar do sistema",
-             *     description="Nesse endpoint o usuário irá deslogar de sua conta no sistema.",
-             *     tags={"Autenticação"},
-             *     security={{"bearerAuth":{}}},
-             *     @OA\Response(
-             *         response=204,
-             *         description="Logout realizado com sucesso. Nenhum conteúdo retornado."
-             *     ),
-             *     @OA\Response(
-             *         response=401,
-             *         description="Credenciais inválidas"
-             *     ),
-             *     @OA\Response(
-             *         response=500,
-             *         description="Erro interno do servidor."
-             *     )
-             * )
-             */
-            public function logout(Request $request)
-            {
-                $requestToken = $request->header('Authorization');
-                $personalAccessToken = new PersonalAccessToken();
-            
-                try {
-                    $token = $personalAccessToken->findToken(str_replace('Bearer', '', $requestToken));
-            
-                    if ($token !== null) {
-                        $token->delete();
-                        return $this->response->format("users", "application/json", "post", null, null, 'Usuário deslogado com sucesso.', 202);
-                    } else {
-                        return $this->response->error("users", "application/json", "post", "Token Not Found", 404);
-                    }
-            
-                } catch (\Exception $e) {
-                    return $this->response->error("users", "application/json", "post", $e->getMessage(), 500);
-                } catch (\PDOException $e) {
-                    return $this->response->error("users", "application/json", "post", $e->getMessage(), 500);
-                }
+    /**
+     * @OA\Post(
+     *     path="/api/users/logout",
+     *     summary="Deslogar do sistema",
+     *     description="Nesse endpoint o usuário irá deslogar de sua conta no sistema.",
+     *     tags={"Autenticação"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=204,
+     *         description="Logout realizado com sucesso. Nenhum conteúdo retornado."
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Credenciais inválidas"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erro interno do servidor."
+     *     )
+     * )
+     */
+    public function logout(Request $request)
+    {
+        $requestToken = $request->header('Authorization');
+        $personalAccessToken = new PersonalAccessToken();
+    
+        try {
+            $token = $personalAccessToken->findToken(str_replace('Bearer', '', $requestToken));
+    
+            if ($token !== null) {
+                $token->delete();
+                return $this->response->format("users", "application\json", "post", null, null, 'Usuário deslogado com sucesso.', 202);
+            } else {
+                return $this->response->error("users", "application\json", "post", "Token Not Found", 404);
             }
+    
+        } catch (\Exception $e) {
+            return $this->response->error("users", "application\json", "post", $e->getMessage(), 500);
+        } catch (\PDOException $e) {
+            return $this->response->error("users", "application\json", "post", $e->getMessage(), 500);
+        }
+    }
 
+    /**
+ * @OA\Get(
+ *     path="/auth/google/redirect",
+ *     summary="Redirect to Google OAuth",
+ *     description="Redirects the user to Google OAuth for authentication.",
+ *     operationId="redirectOAuth",
+ *     tags={"User - OAuth"},
+ *     @OA\Response(
+ *         response=302,
+ *         description="Redirect to Google OAuth",
+ *         @OA\Header(
+ *             header="Location",
+ *             description="Redirect location",
+ *             @OA\Schema(type="string")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="error", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
 
+    public function redirectOAuth()
+    {
+        try {
+            return Socialite::driver('google')->redirect();
+        } catch(\Exception $e)
+        {
+            return $this -> response -> error("oauth","application\json","get",$e -> getMessage(), 500);
+        } catch(PDOException $e)
+        {
+            return $this -> response -> error("oauth","application\json","get",$e -> getMessage(), 500);
+        }
+    }
 
+    /**
+ * @OA\Get(
+ *     path="/auth/google/callback",
+ *     summary="Handle Google OAuth Callback",
+ *     description="Handles the callback from Google after authentication and logs in the user.",
+ *     operationId="oAuth",
+ *     tags={"User - OAuth"},
+ *     @OA\Response(
+ *         response=302,
+ *         description="Redirect to the dashboard after successful login",
+ *         @OA\Header(
+ *             header="Location",
+ *             description="Redirect location",
+ *             @OA\Schema(type="string")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="error", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+    public function oAuth()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+
+            $user = User::updateOrCreate([
+                'google_id' => $googleUser->id
+            ], [
+                'name' => $googleUser->name,
+                'email' => $googleUser->email,
+                'google_token' => $googleUser->token,
+                'google_refresh_token' => $googleUser->refreshToken
+            ]);
+
+            Auth::login($user);
+
+            // Redireciona para a rota dashboard
+            return redirect()->route('api.dashboard');
+            
+        } catch (\Exception $e) {
+            return $this->response->error("oauth", "application/json", "get", $e->getMessage(), 500);
+        } catch (\PDOException $e) {
+            return $this->response->error("oauth", "application/json", "get", $e->getMessage(), 500);
+        }
+    }
+    
 
 
 
