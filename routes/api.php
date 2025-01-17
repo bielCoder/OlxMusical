@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('users')->group(function () {
         Route::controller(AuthController::class)->group(function(){
-            Route::post('logout','logout')->name('User - Logout');
         });
     });
 });
@@ -20,6 +19,8 @@ Route::prefix('users')->group(function () {
             Route::get('auth/google/redirect','redirectOAuth')->name('User - OAuth - Redirect');
             Route::get('auth/google/callback', 'oAuth')->name('User - OAuth');
         });
+        Route::post('logout','logout')->name('User - Logout');
+
     });
 });
 

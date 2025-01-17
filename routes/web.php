@@ -11,27 +11,7 @@ Route::get('/', function () {
 });
 
 
-Route::get('/auth/google/redirect', function(){
-    return Socialite::driver('google')->redirect();
-});
+Route::get('/auth/google/redirect', [AuthController::class,'redirectOAuth']);
 
-Route::get('/auth/google/callback', function(){
-    $googleUser = Socialite::driver('google')->user();
-    $user = User::updateOrCreate([
-        'google_id' => $googleUser -> id
-    ],[
-        'name' => $googleUser -> name,
-        'email' => $googleUser -> email,
-        'google_token' => $googleUser -> token,
-        'google_refresh_token' => $googleUser -> refreshToken
-    ]);
-
-
-
-    Auth::login($user);
-    return redirect()->route('api.dashboard');
-    
-});
-
-
+Route::get('auth/google/callback', [AuthController::class,'oAuth']);
 

@@ -97,7 +97,10 @@ class AuthController extends Controller
                 "password" => Hash::make($request -> password),
                 "password_confirmed" =>  $request -> password_confirmed
             ]);
-            return $this -> response -> format("users","application\json","post",$saved,null,"Usuário registrado com sucesso",201);
+
+            return response() -> json($saved);
+
+            // return $this -> response -> format("users","application\json","post",$saved,null,"Usuário registrado com sucesso",201);
         } catch(\Exception $e) 
         {
             return $this -> response -> error("users","application\json","post",$e -> getMessage(), 500);
@@ -144,6 +147,7 @@ class AuthController extends Controller
             $user = User::where('email', $request->email)->first();
             if(!is_null($user) && Hash::check($request -> password, $user -> password))
             {
+                Auth::login($user);
                 return $this -> response -> format("users","application\json","post",$user,$user -> createToken($user -> fullname) -> plainTextToken,$user -> fullname.' is logged',202);
             } else {
                 return $this -> response -> error("users","application\json","post","Credenciais Inválidas.",401);
@@ -183,22 +187,35 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $requestToken = $request->header('Authorization');
-        $personalAccessToken = new PersonalAccessToken();
+    
+        if (!$requestToken) {
+            return response()->json([
+                'message' => 'Authorization token not provided.'
+            ], 400);
+        }
     
         try {
-            $token = $personalAccessToken->findToken(str_replace('Bearer', '', $requestToken));
+            $token = str_replace('Bearer ', '', $requestToken);
     
-            if ($token !== null) {
-                $token->delete();
-                return $this->response->format("users", "application\json", "post", null, null, 'Usuário deslogado com sucesso.', 202);
-            } else {
-                return $this->response->error("users", "application\json", "post", "Token Not Found", 404);
+            $personalAccessToken = PersonalAccessToken::findToken($token);
+    
+            if ($personalAccessToken) {
+                $personalAccessToken->delete();
+                Auth::logout();
+    
+                return response()->json([
+                    'message' => 'Usuário deslogado com sucesso.'
+                ], 202);
             }
     
+            return response()->json([
+                'message' => 'Token not found.'
+            ], 404);
+    
         } catch (\Exception $e) {
-            return $this->response->error("users", "application\json", "post", $e->getMessage(), 500);
-        } catch (\PDOException $e) {
-            return $this->response->error("users", "application\json", "post", $e->getMessage(), 500);
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -273,10 +290,10 @@ class AuthController extends Controller
             $googleUser = Socialite::driver('google')->user();
 
             $user = User::updateOrCreate([
-                'google_id' => $googleUser->id
+                'email' => $googleUser->email,
             ], [
                 'name' => $googleUser->name,
-                'email' => $googleUser->email,
+                'google_id' => $googleUser->id,
                 'google_token' => $googleUser->token,
                 'google_refresh_token' => $googleUser->refreshToken
             ]);
