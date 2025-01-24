@@ -26,12 +26,11 @@ class AuthRegisterRequest extends FormRequest
     public function rules()
     {
         return [
-            'image' => ['string'],
-            'fullname' => ['required', 'string', new FullNameRule],
+            'name' => ['required', 'string', new FullNameRule],
             'email' => ['required', 'unique:users,email', 'lowercase', 'string', 'email'],
-            'main_phone' => ['required'],
-            'optional_phone' => ['nullable'],  // Torna opcional
-            'password' => ['required', 'string'],  // 'confirmed' espera 'password_confirmation'
+            'main_phone' => ['required', 'numeric'],
+            'optional_phone' => ['nullable', 'numeric'],  // Torna opcional
+            'password' => ['required', 'string', 'confirmed'],  // 'confirmed' espera 'password_confirmation
         ];
     }
     
@@ -40,7 +39,7 @@ class AuthRegisterRequest extends FormRequest
         return [
             'required' => 'Campo obrigatório.',
             'string' => 'Campo aceita apenas caracteres.',
-            'unique' => 'Conta de e-mail já existente.',
+            'unique' => 'Conta de e-mail já está sendo utilizado',
             'lowercase' => 'Campo aceita apenas caracteres minúsculos.',
             'email' => 'Campo aceita apenas e-mail.',
             'numeric' => 'Campo aceita apenas números.',

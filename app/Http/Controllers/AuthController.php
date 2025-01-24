@@ -79,36 +79,44 @@ class AuthController extends Controller
      * )
      */
 
-    public function register(AuthRegisterRequest $request)
-    {
-        try {
-
-            if(!$request -> password_confirmed)
-            {
-                return $this -> response -> error("users","application\json","post","senhas não conferem.",401);
-            }
-
-            $saved = $this -> users -> create([
-                "image" => $request -> image,
-                "fullname" => $request -> fullname,
-                "main_phone" => $request -> main_phone,
-                "optional_phone" => $request -> optional_phone,
-                "email" => $request -> email,
-                "password" => Hash::make($request -> password),
-                "password_confirmed" =>  $request -> password_confirmed
-            ]);
-
-            return response() -> json($saved);
-
-            // return $this -> response -> format("users","application\json","post",$saved,null,"Usuário registrado com sucesso",201);
-        } catch(\Exception $e) 
-        {
-            return $this -> response -> error("users","application\json","post",$e -> getMessage(), 500);
-        } catch(\PDOException $e)
-        {
-            return $this -> response -> error("users","application\json","post",$e -> getMessage(), 500);
-        }
-    }
+     public function register(AuthRegisterRequest $request)
+     {
+         try {
+             // Verifica se as senhas conferem
+             if (!$request->password_confirmation) {
+                 return $this->response->error("users", "application/json", "post", "Senhas não conferem.", 401);
+             }
+     
+             // Verifica se o e-mail já está cadastrado
+             $find = $this->users->where('email', $request->email)->first();
+     
+             if ($find) {
+                 // Atualiza a senha do usuário existente
+                 $find->update([
+                     "password" => Hash::make($request->password),
+                 ]);
+     
+                 return $this->response->format("users", "application/json", "post", null, null, "Usuário registrado com sucesso", 200);
+             } else {
+                 // Cria um novo usuário
+                 $saved = $this->users->create([
+                     "image" => $request->image,
+                     "fullname" => $request->fullname,
+                     "main_phone" => $request->main_phone,
+                     "optional_phone" => $request->optional_phone,
+                     "email" => $request->email,
+                     "password" => Hash::make($request->password),
+                     "password_confirmation" => $request->password_confirmation,
+                 ]);
+     
+                 return $this->response->format("users", "application/json", "post", $saved, null, "Usuário registrado com sucesso", 201);
+             }
+         } catch (\Exception $e) {
+             return $this->response->error("users", "application/json", "post", $e->getMessage(), 500);
+         } catch (\PDOException $e) {
+             return $this->response->error("users", "application/json", "post", $e->getMessage(), 500);
+         }
+     }
 
 
         /**
@@ -141,27 +149,52 @@ class AuthController extends Controller
          */
 
 
-    public function login(AuthLoginRequest $request)
-    {
-        try{
-            $user = User::where('email', $request->email)->first();
-            if(!is_null($user) && Hash::check($request -> password, $user -> password))
-            {
-                Auth::login($user);
-                return $this -> response -> format("users","application\json","post",$user,$user -> createToken($user -> fullname) -> plainTextToken,$user -> fullname.' is logged',202);
-            } else {
-                return $this -> response -> error("users","application\json","post","Credenciais Inválidas.",401);
-            }
-        } catch(\Exception $e)
-        {
-          
-            return $this -> response -> error("users","application\json","post",$e -> getMessage(),500);
-        } catch(\PDOException $e)
-        {
-          
-            return $this -> response -> error("users","application\json","post",$e -> getMessage(),500);
-        }
-    }
+         public function login(AuthLoginRequest $request)
+         {
+             try {
+                 $user = User::where('email', $request->email)->first();
+                 if (!is_null($user) && Hash::check($request->password, $user->password)) {
+                     // Verifica se fullname está definido
+                     $fullname = $user->fullname ?? 'userLogin'; // Defina um nome padrão se fullname for null
+         
+                     Auth::login($user);
+         
+                     return $this->response->format(
+                         "users",
+                         "application\json",
+                         "post",
+                         $user,
+                         $user->createToken($fullname)->plainTextToken,
+                         $fullname . ' is logged',
+                         202
+                     );
+                 } else {
+                     return $this->response->error(
+                         "users",
+                         "application\json",
+                         "post",
+                         "Credenciais Inválidas.",
+                         401
+                     );
+                 }
+             } catch (\Exception $e) {
+                 return $this->response->error(
+                     "users",
+                     "application\json",
+                     "post",
+                     $e->getMessage(),
+                     500
+                 );
+             } catch (\PDOException $e) {
+                 return $this->response->error(
+                     "users",
+                     "application\json",
+                     "post",
+                     $e->getMessage(),
+                     500
+                 );
+             }
+         }
 
     /**
      * @OA\Post(
@@ -284,31 +317,32 @@ class AuthController extends Controller
  * )
  */
 
-    public function oAuth()
-    {
-        try {
-            $googleUser = Socialite::driver('google')->user();
+   
+ public function oAuth()
+ {
+     try {
+         $googleUser = Socialite::driver('google')->user();
 
-            $user = User::updateOrCreate([
-                'email' => $googleUser->email,
-            ], [
-                'name' => $googleUser->name,
-                'google_id' => $googleUser->id,
-                'google_token' => $googleUser->token,
-                'google_refresh_token' => $googleUser->refreshToken
-            ]);
+         $user = User::updateOrCreate([
+             'email' => $googleUser->email,
+         ], [
+             'name' => $googleUser->name,
+             'google_id' => $googleUser->id,
+             'google_token' => $googleUser->token,
+             'google_refresh_token' => $googleUser->refreshToken
+         ]);
 
-            Auth::login($user);
+         Auth::login($user);
 
-            // Redireciona para a rota dashboard
-            return redirect()->route('api.dashboard');
-            
-        } catch (\Exception $e) {
-            return $this->response->error("oauth", "application/json", "get", $e->getMessage(), 500);
-        } catch (\PDOException $e) {
-            return $this->response->error("oauth", "application/json", "get", $e->getMessage(), 500);
-        }
-    }
+         // Redireciona para a rota dashboard
+         return redirect()->route('api.users');
+         
+     } catch (\Exception $e) {
+         return $this->response->error("oauth", "application/json", "get", $e->getMessage(), 500);
+     } catch (\PDOException $e) {
+         return $this->response->error("oauth", "application/json", "get", $e->getMessage(), 500);
+     }
+ }
     
 
 
